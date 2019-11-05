@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
-    - name: Docker login using azure/docker-login@v1 action
+    - name: Docker login using azure/container-actions/docker-login@master action
       uses: azure/docker-login@v1
       with:
         login-server: rakolacr.azurecr.io
