@@ -1,49 +1,64 @@
-on: [push]
+name: Multijob workflow to build and deploy Docker app to Azure
 
-name: Build and deploy to Azure Kubernetes Service (AKS)
+on: push
+
+# CONFIGURATION
+# For help, go to https://github.com/Azure/Actions
+#
+# 1. Set up the following secrets in your repository:
+#   AZURE_CREDENTIALS, REGISTRY_USERNAME, REGISTRY_PASSWORD, AZURE_DEVOPS_TOKEN
+#
+# 2. Change these variables for your configuration:
+env:
+  AZURE_RESOURCE_GROUP: ActionsDemo   # set this to your Azure Resource group's name  
+  AZURE_WEBAPP_NAME: AppWithContainer1   # set this to your application's name
+  AZURE_APP_PLAN: ActionPlan  # set this to your App service plan's name
+  CONTAINER_REGISTRY: actionregistry.azurecr.io   # set this to the path to your web app project, defaults to the repository root 
 
 jobs:
-
-  run:
-    name: Run
+  build-and-deploy-to-dev:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-
-    - name: Docker login using azure/docker-login@v1
-      uses: azure/docker-login@v1
+    
+     # Authentication
+    - uses: azure/login@v1
       with:
-        login-server: rakolacr.azurecr.io
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - uses: azure/docker-login@v1
+      with:
+        login-server: actionregistry.azurecr.io
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     
-    - name: Docker build
-      run: |
-        docker build . -t rakolacr.azurecr.io/aksdemo:${{ github.sha }}
-        docker push rakolacr.azurecr.io/aksdemo:${{ github.sha }} 
-      
-    - name: Set Context for Azure Kubernetes Cluster using azure/aks-set-context@v1 action
-      uses: azure/aks-set-context@v1
+    # Authentication
+    - run: |
+        docker build . -t actionregistry.azurecr.io/nodejsapp:${{ github.sha }}
+        docker push actionregistry.azurecr.io/nodejsapp:${{ github.sha }}
+        
+    # Provision a new Web App
+    - name: Azure CLI script to create a new Web App for Container
+      uses: azure/CLI@v0-beta
       with:
-        creds: '${{ secrets.AZURE_CREDENTIALS }}'
-        cluster-name: desattir-bg
-        resource-group: desattir-bg
-
-    - name: Create secret in Kubernetes Cluster using azure/k8s-create-secret@v1 action
-      uses: azure/k8s-create-secret@v1
-      with:
-        container-registry-url: rakolacr.azurecr.io
-        container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
-        container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
-        secret-name: demo-e2e-secret
+        azcliversion: latest
+        inlineScript: |
+          az account show
+          az storage -h
+          az webapp create --resource-group ActionsDemo --plan ActionPlan --name AppWithContainer2  -i nginx
+        # az webapp create --resource-group $AZURE_RESOURCE_GROUP --plan $AZURE_APP_PLAN --name $AZURE_WEBAPP_NAME
+          
+    - uses: azure/webapps-container-deploy@v1
+      with: 
+        app-name: AppWithContainer2 
+        images: 'actionregistry.azurecr.io/nodejsapp:${{ github.sha }}'
     
-    - name: Deploy manifests to Kubernetes cluster using Azure/k8s-deploy@v1 action
-      uses: Azure/k8s-deploy@v1
+  deploy-to-Prod:
+    needs: build-and-deploy-to-dev
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Trigger an Azure Pipeline to deploy the app to PRODUCTION'
+      uses: Azure/pipelines@v1
       with:
-        manifests: |
-          manifests/deployment.yml
-          manifests/service.yml
-        images: |
-          demoe2e.azurecr.io/aksdemo:${{ github.sha }}
-        imagepullsecrets: |
-          demo-e2e-secret
+        azure-devops-project-url: 'https://dev.azure.com/mseng/Personal'
+        azure-pipeline-name: 'NodeApp_Azure_Prod' 
+        azure-devops-token: '${{ secrets.AZURE_DEVOPS_TOKEN }}'
