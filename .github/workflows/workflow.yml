@@ -5,15 +5,8 @@ on: push
 # CONFIGURATION
 # For help, go to https://github.com/Azure/Actions
 #
-# 1. Set up the following secrets in your repository:
+# Set up the following secrets in your repository:
 #   AZURE_CREDENTIALS, REGISTRY_USERNAME, REGISTRY_PASSWORD, AZURE_DEVOPS_TOKEN
-#
-# 2. Change these variables for your configuration:
-env:
-  AZURE_RESOURCE_GROUP: ActionsDemo   # set this to your Azure Resource group's name  
-  AZURE_WEBAPP_NAME: AppWithContainer1   # set this to your application's name
-  AZURE_APP_PLAN: ActionPlan  # set this to your App service plan's name
-  CONTAINER_REGISTRY: actionregistry.azurecr.io   # set this to the path to your web app project, defaults to the repository root 
 
 jobs:
   build-and-deploy-to-dev:
@@ -33,8 +26,8 @@ jobs:
     
     # Authentication
     - run: |
-        docker build . -t actionregistry.azurecr.io/nodejsapp:${{ github.sha }}
-        docker push actionregistry.azurecr.io/nodejsapp:${{ github.sha }}
+        docker build . -t actionregistry.azurecr.io/nodejsapp:latest
+        docker push actionregistry.azurecr.io/nodejsapp:latest
         
     # Provision a new Web App
     - name: Azure CLI script to create a new Web App for Container
@@ -45,20 +38,19 @@ jobs:
           az account show
           az storage -h
           az webapp create --resource-group ActionsDemo --plan ActionPlan --name AppWithContainer3  -i nginx
-        # az webapp create --resource-group $AZURE_RESOURCE_GROUP --plan $AZURE_APP_PLAN --name $AZURE_WEBAPP_NAME
           
     - uses: azure/webapps-container-deploy@v1
       with: 
         app-name: AppWithContainer3 
-        images: 'actionregistry.azurecr.io/nodejsapp:${{ github.sha }}'
+        images: 'actionregistry.azurecr.io/nodejsapp:latest'
     
   deploy-to-Prod:
     needs: build-and-deploy-to-dev
     runs-on: ubuntu-latest
     steps:
     - name: 'Trigger an Azure Pipeline to deploy the app to PRODUCTION'
-      uses: Azure/pipelines@v1
+      uses: Azure/pipelines@releases/v1
       with:
-        azure-devops-project-url: 'https://dev.azure.com/mseng/Personal'
+        azure-devops-project-url: 'https://dev.azure.com/mseng/AzureDevOps/'
         azure-pipeline-name: 'NodeApp_Azure_Prod' 
         azure-devops-token: '${{ secrets.AZURE_DEVOPS_TOKEN }}'
