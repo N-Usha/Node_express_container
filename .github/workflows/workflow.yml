@@ -55,6 +55,9 @@ jobs:
         azure-devops-token: '${{ secrets.AZURE_DEVOPS_TOKEN }}'
     
     # Delete the Web App provisioned for Development
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Azure CLI script to create a new Web App for Container
       uses: azure/CLI@v0-beta
       with:
