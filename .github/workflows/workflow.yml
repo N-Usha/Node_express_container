@@ -60,4 +60,4 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          az webapp create --resource-group ActionsDemo --name AppWithContainerDev
+          az webapp delete --resource-group ActionsDemo --name AppWithContainerDev
