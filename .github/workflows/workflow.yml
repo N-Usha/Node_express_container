@@ -28,10 +28,10 @@ jobs:
    # Authentication
     - uses: azure/login@v1
       with:
-        creds: ${{ secrets.CONTAINER_REGISTRY }}
+        creds: ${{ secrets.AZURE_CREDENTIALS  }}
     - uses: azure/docker-login@v1
       with:
-        login-server: ${{ env.AZURE_WEBAPP_NAME }}
+        login-server: ${{ env.CONTAINER_REGISTRY }}
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     
