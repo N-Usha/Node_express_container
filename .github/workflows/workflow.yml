@@ -37,10 +37,16 @@ jobs:
     steps:
     - uses: actions/checkout@master
     
-    - name: Azure authentication
+#     - name: Azure authentication
+#       uses: azure/login@v1
+#       with:
+#         creds: ${{ secrets.AZURE_CREDENTIALS  }}
+    - name: Login to Azure
       uses: azure/login@v1
+      env:
+        CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS  }}
+        creds: ${{ env.CREDENTIALS }}
         
     - name: ACR authentication
       uses: azure/docker-login@v1
