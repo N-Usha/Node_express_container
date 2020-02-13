@@ -59,7 +59,7 @@ jobs:
         docker push ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}    
          
     - name: 'Deploy to Azure Web App for Container'   
-      uses: azure/webapps-container-deploy@v1
+      uses: azure/webapps-deploy@releases/v2
       with: 
         app-name: ${{ env.AZURE_WEBAPP_NAME }} 
         images: ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}
