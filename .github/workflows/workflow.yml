@@ -41,17 +41,31 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS  }}
         
-    - name: ACR authentication
-      uses: azure/docker-login@v1
+#     - name: ACR authentication
+#       uses: azure/docker-login@v1
+#       with:
+#         login-server: ${{ env.CONTAINER_REGISTRY }}
+#         username: ${{ secrets.REGISTRY_USERNAME }}
+#         password: ${{ secrets.REGISTRY_PASSWORD }}    
+#     - name: Docker Build & Push to ACR
+#       run: |
+#         docker build . -t ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}
+#         docker push ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}    
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1.0.0
       with:
-        login-server: ${{ env.CONTAINER_REGISTRY }}
+        # Username used to log in to a Docker registry. If not set then no login will occur
         username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}    
-    - name: Docker Build & Push to ACR
-      run: |
-        docker build . -t ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}
-        docker push ${{ env.CONTAINER_REGISTRY }}/nodejsapp:${{ github.sha }}    
-         
+        # Password or personal access token used to log in to a Docker registry. If not set then no login will occur
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        # Server address of Docker registry. If not set then will default to Docker Hub
+        registry: ${{ env.CONTAINER_REGISTRY }}
+        # Docker repository to tag the image with
+        repository: nodejsapp
+        # Automatically tags the built image with the git short SHA as per the readme
+        tag_with_sha: true
+             
     - name: 'Deploy to Azure Web App for Container'   
       uses: azure/webapps-deploy@releases/v2
       with: 
